@@ -1,0 +1,8 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "comic-analytics"
+version = "0.1.0"
+packages = ["database"]
