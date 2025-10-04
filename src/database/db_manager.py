@@ -1,6 +1,7 @@
 import sqlite3
 from pathlib import Path
 from database import models
+from services import filters
 
 DB_FILE = Path(__file__).parent / "data.db"
 
@@ -44,6 +45,18 @@ class DBManager:
         cur = self.conn.cursor()
         cur.execute(query, values)
         return cur.fetchall()
+    
+    def advanced_search_mickey(self, **kwargs):
+        query, values, exclude_range = filters.build_mickey_filters(**kwargs)
+        cur = self.conn.cursor()
+        cur.execute(query, values)
+        results = cur.fetchall()
+        if exclude_range is not None:
+            start, end = exclude_range
+            existing = {row["issue_num"] for row in results}
+            missing = [num for num in range(start, end+1) if num not in existing]
+            return missing
+        return results
 
     def add_other(self, title, writer, artist, collection, publisher, issues, main_character, event, story_year, category):
         cur = self.conn.cursor()
@@ -70,6 +83,12 @@ class DBManager:
             values.append(val)
         if conditions:
             query += " WHERE " + " AND ".join(conditions)
+        cur = self.conn.cursor()
+        cur.execute(query, values)
+        return cur.fetchall()
+    
+    def advanced_search_other(self, **kwargs):
+        query, values = filters.build_other_filters(**kwargs)
         cur = self.conn.cursor()
         cur.execute(query, values)
         return cur.fetchall()
