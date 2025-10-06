@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
-from database import models
-from services import filters
+from . import models
+from ..services import filters
 
 DB_FILE = Path(__file__).parent / "data.db"
 
@@ -92,6 +92,27 @@ class DBManager:
         cur = self.conn.cursor()
         cur.execute(query, values)
         return cur.fetchall()
+
+    def update_mickey(self, issue_num, vol_num, mainstory, year):
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE mickey
+            SET mainstory = ?, year = ?
+            WHERE issue_num = ? AND vol_num = ?
+        """, (mainstory, year, issue_num, vol_num))
+        self.conn.commit()
+
+    def update_other(self, id, title, writer, artist, collection,publisher, issues, main_character, event, story_year, category):
+        cur = self.conn.cursor()
+        cur.execute("""
+            UPDATE other
+            SET title=?, writer=?, artist=?, collection=?, publisher=?,
+                issues=?, main_character=?, event=?, story_year=?, category=? 
+            WHERE id = ?
+        """, (title, writer, artist, collection, publisher,
+            issues, main_character, event, story_year, category, id))
+        self.conn.commit()
+
 
     def close(self):
         self.conn.close()
