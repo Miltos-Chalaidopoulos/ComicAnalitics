@@ -1,7 +1,6 @@
 import csv
 from ..database.db_manager import DBManager
 
-
 class CSVService:
     def __init__(self, db: DBManager):
         self.db = db
@@ -67,7 +66,7 @@ class CSVService:
                         row["Publisher"],
                         row["Issues"],
                         row["Main Character"],
-                        True if row["Event"].lower() in ("true", "yes", "1") else False,
+                        True if row["Event"].lower() == "true" else False,
                         int(row["Story Year"]),
                         row["category"],
                     )
