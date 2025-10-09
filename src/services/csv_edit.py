@@ -1,9 +1,27 @@
 import csv
 from ..database.db_manager import DBManager
 
+
 class CSVService:
     def __init__(self, db: DBManager):
         self.db = db
+
+    def detect_csv_type(self, csv_file):
+        with open(csv_file, newline="", encoding="utf-8") as f:
+            reader = csv.reader(f)
+            headers = next(reader)
+
+        mickey_headers = ["Issue num", "Vol num", "Main Story", "Year"]
+        other_headers = [
+            "Title", "Writer", "Artist", "Collection", "Publisher",
+            "Issues", "Main Character", "Event", "Story Year", "category"
+        ]
+
+        if headers == mickey_headers:
+            return "mickey"
+        elif headers == other_headers:
+            return "other"
+        return None
 
     def import_mickey(self, csv_file):
         with open(csv_file, newline="", encoding="utf-8") as f:
@@ -49,7 +67,7 @@ class CSVService:
                         row["Publisher"],
                         row["Issues"],
                         row["Main Character"],
-                        True if row["Event"].lower() == "true" else False,
+                        True if row["Event"].lower() in ("true", "yes", "1") else False,
                         int(row["Story Year"]),
                         row["category"],
                     )

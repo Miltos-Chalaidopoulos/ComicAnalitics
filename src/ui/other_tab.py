@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView, QFileDialog
+    QWidget, QVBoxLayout, QPushButton, QMessageBox,
+    QTableWidget, QTableWidgetItem, QHeaderView
 )
 from PySide6.QtCore import Qt
 from ..database.db_manager import DBManager
-from ..services.csv_edit import CSVService
 from .dialogs import AddOtherDialog
 
 
@@ -12,14 +12,6 @@ class OtherTab(QWidget):
         super().__init__()
         self.db = db
         layout = QVBoxLayout()
-
-        csv_import_btn = QPushButton("📂 Import from CSV")
-        csv_import_btn.clicked.connect(self.import_csv)
-        layout.addWidget(csv_import_btn)
-
-        csv_export_btn = QPushButton("💾 Export to CSV")
-        csv_export_btn.clicked.connect(self.export_csv)
-        layout.addWidget(csv_export_btn)
 
         add_btn = QPushButton("➕ Add Other Comic")
         add_btn.clicked.connect(self.add_other_comic)
@@ -79,25 +71,6 @@ class OtherTab(QWidget):
             self.db.delete_other(comic_id)
             QMessageBox.information(self, "Deleted", "Comic deleted successfully!")
             self.refresh_table()
-
-    def import_csv(self):
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Select CSV", "", "CSV Files (*.csv)"
-        )
-        if file_path:
-            service = CSVService(self.db)
-            service.import_other(file_path)
-            QMessageBox.information(self, "Success", "CSV imported successfully!")
-            self.refresh_table()
-
-    def export_csv(self):
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save CSV", "", "CSV Files (*.csv)"
-        )
-        if file_path:
-            service = CSVService(self.db)
-            service.export_other(file_path)
-            QMessageBox.information(self, "Success", "CSV exported successfully!")
 
     def on_item_changed(self, item):
         row = item.row()
