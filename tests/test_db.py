@@ -80,3 +80,52 @@ def test_empty_search_returns_all(db):
                  "Issues", "CharacterY", True, 2022, "CategoryY")
     results = db.search_other()
     assert len(results) == 1
+
+def test_advanced_search_mickey_exact(db):
+    db.add_mickey(100, 1, "Exact Match", 2000)
+    results = db.advanced_search_mickey(issue_num=100)
+    assert len(results) == 1
+    assert results[0]["mainstory"] == "Exact Match"
+
+def test_advanced_search_mickey_year_range(db):
+    db.add_mickey(101, 1, "Story A", 1995)
+    db.add_mickey(102, 1, "Story B", 2005)
+    results = db.advanced_search_mickey(year_range=(1990, 2000))
+    assert len(results) == 1
+    assert results[0]["mainstory"] == "Story A"
+
+def test_advanced_search_mickey_issue_range(db):
+    for i in range(200, 205):
+        db.add_mickey(i, 1, f"Story {i}", 2010)
+    results = db.advanced_search_mickey(issue_range=(201, 203))
+    assert len(results) == 3
+
+def test_advanced_search_mickey_exclude_range(db):
+    for i in range(300, 305):
+        db.add_mickey(i, 1, f"Story {i}", 2015)
+    missing = db.advanced_search_mickey(exclude_issue_range=(300, 305))
+    # Βάλαμε 300-304, λείπει το 305
+    assert 305 in missing
+
+def test_advanced_search_other_exact(db):
+    db.add_other("House Of X", "Hickman", "Larraz", "N/A", "Marvel",
+                 "HOX #1-6", "X-Men", True, 2019, "Marvel")
+    results = db.advanced_search_other(writer="Hickman", category="Marvel")
+    assert len(results) == 1
+    assert results[0]["title"] == "House Of X"
+
+def test_advanced_search_other_year_range(db):
+    db.add_other("Event A", "WriterA", "ArtistA", "CollA", "PublisherA",
+                 "Issues", "HeroA", True, 2010, "CatA")
+    db.add_other("Event B", "WriterB", "ArtistB", "CollB", "PublisherB",
+                 "Issues", "HeroB", False, 2020, "CatB")
+    results = db.advanced_search_other(story_year_range=(2005, 2015))
+    assert len(results) == 1
+    assert results[0]["title"] == "Event A"
+
+def test_advanced_search_other_multiple_filters(db):
+    db.add_other("TitleX", "WriterX", "ArtistX", "CollectionX", "PublisherX",
+                 "IssuesX", "HeroX", True, 2021, "CategoryX")
+    results = db.advanced_search_other(writer="WriterX", main_character="HeroX", event=True)
+    assert len(results) == 1
+    assert results[0]["title"] == "TitleX"
