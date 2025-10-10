@@ -1,14 +1,7 @@
-from PySide6.QtWidgets import (
-    QMainWindow, QMenuBar, QMenu, QWidget,
-    QVBoxLayout, QLabel, QTabWidget, QMessageBox,
-    QFileDialog
-)
+from PySide6.QtWidgets import (QMainWindow, QMenuBar, QMenu, QWidget,QVBoxLayout, QLabel, QTabWidget, QMessageBox,QFileDialog)
 from PySide6.QtGui import QAction
-from PySide6.QtCore import Qt
-
 from .mickey_tab import MickeyTab
 from .other_tab import OtherTab
-from .dialogs import SearchDialog
 from ..database.db_manager import DBManager
 from ..services.csv_edit import CSVService
 
@@ -103,10 +96,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Success", "Other CSV exported successfully!")
 
     def open_search_dialog(self):
-        dialog = SearchDialog()
-        if dialog.exec():
-            query = dialog.search_input.text()
-            QMessageBox.information(self, "Search", f"Search for: {query}")
+        self.mickey_tab.search_mickey_comics()
 
     def show_about(self):
         QMessageBox.information(

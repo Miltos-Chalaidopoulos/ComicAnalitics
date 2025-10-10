@@ -28,16 +28,13 @@ class DBManager:
 
     def delete_mickey(self, issue_num, vol_num):
         cur = self.conn.cursor()
-        cur.execute(
-            "DELETE FROM mickey WHERE issue_num = ? AND vol_num = ?",
-            (issue_num, vol_num),
-        )
+        cur.execute("DELETE FROM mickey WHERE issue_num = ? AND vol_num = ?", (issue_num, vol_num))
         self.conn.commit()
 
-    def search_mickey(self, **filters):
+    def search_mickey(self, **filters_kwargs):
         query = "SELECT * FROM mickey"
         conditions, values = [], []
-        for key, val in filters.items():
+        for key, val in filters_kwargs.items():
             conditions.append(f"{key} = ?")
             values.append(val)
         if conditions:
@@ -48,15 +45,20 @@ class DBManager:
     
     def advanced_search_mickey(self, **kwargs):
         query, values, exclude_range = filters.build_mickey_filters(**kwargs)
+        print("QUERY:", query)
+        print("VALUES:", values)
         cur = self.conn.cursor()
         cur.execute(query, values)
-        results = cur.fetchall()
-        if exclude_range is not None:
-            start, end = exclude_range
-            existing = {row["issue_num"] for row in results}
-            missing = [num for num in range(start, end+1) if num not in existing]
-            return missing
-        return results
+        return cur.fetchall()
+
+    def find_missing_issues(self, start, end, **kwargs):
+        query, values, _ = filters.build_mickey_filters(**kwargs)
+        print("QUERY (missing):", query)
+        print("VALUES (missing):", values)
+        cur = self.conn.cursor()
+        cur.execute(query, values)
+        existing = {row["issue_num"] for row in cur.fetchall()}
+        return [num for num in range(start, end + 1) if num not in existing]
 
     def add_other(self, title, writer, artist, collection, publisher, issues, main_character, event, story_year, category):
         cur = self.conn.cursor()

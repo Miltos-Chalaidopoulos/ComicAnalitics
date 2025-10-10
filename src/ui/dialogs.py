@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QDialog, QFormLayout, QLineEdit, QPushButton, QVBoxLayout, QMessageBox, QCheckBox
+from PySide6.QtWidgets import (QDialog, QFormLayout, QLineEdit, QPushButton,QVBoxLayout, QMessageBox, QCheckBox)
 
 class AddMickeyDialog(QDialog):
     def __init__(self, db_manager):
@@ -37,22 +37,6 @@ class AddMickeyDialog(QDialog):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to add comic: {e}")
 
-class SearchDialog(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Search Mickey Comics")
-        self.setMinimumWidth(300)
-
-        layout = QFormLayout()
-        self.search_input = QLineEdit()
-        layout.addRow("Search Query:", self.search_input)
-
-        self.submit_btn = QPushButton("Search")
-        self.submit_btn.clicked.connect(self.accept)
-        v_layout = QVBoxLayout()
-        v_layout.addLayout(layout)
-        v_layout.addWidget(self.submit_btn)
-        self.setLayout(v_layout)
 
 class AddOtherDialog(QDialog):
     def __init__(self, db_manager):
