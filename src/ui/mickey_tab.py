@@ -1,8 +1,7 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QMessageBox,
-    QTableWidget, QTableWidgetItem, QHeaderView,
-    QLineEdit, QHBoxLayout, QLabel, QGroupBox,
-    QDialog, QScrollArea, QTextEdit
+    QWidget, QVBoxLayout, QTabWidget, QTableWidget, QTableWidgetItem,
+    QHBoxLayout, QPushButton, QLabel, QLineEdit, QGroupBox,
+    QDialog, QScrollArea, QTextEdit, QMessageBox, QHeaderView
 )
 from PySide6.QtCore import Qt
 from ..database.db_manager import DBManager
@@ -14,74 +13,71 @@ class MickeyTab(QWidget):
         super().__init__()
         self.db = db
         layout = QVBoxLayout()
-
-        filter_box = QGroupBox("Filters")
+        self.setLayout(layout)
+        self.filter_box = QGroupBox("Filters")
         filter_layout = QVBoxLayout()
+        top_row = QHBoxLayout()
+        bottom_row = QHBoxLayout()
 
-        row1 = QHBoxLayout()
         self.issue_input = QLineEdit(); self.issue_input.setPlaceholderText("Issue #")
         self.vol_input = QLineEdit(); self.vol_input.setPlaceholderText("Vol #")
         self.mainstory_input = QLineEdit(); self.mainstory_input.setPlaceholderText("Main Story")
         self.year_input = QLineEdit(); self.year_input.setPlaceholderText("Year")
 
-        row1.addWidget(QLabel("Issue:")); row1.addWidget(self.issue_input)
-        row1.addWidget(QLabel("Vol:")); row1.addWidget(self.vol_input)
-        row1.addWidget(QLabel("Story:")); row1.addWidget(self.mainstory_input)
-        row1.addWidget(QLabel("Year:")); row1.addWidget(self.year_input)
+        for lbl_text, le in [("Issue", self.issue_input), ("Vol", self.vol_input),
+                             ("Story", self.mainstory_input), ("Year", self.year_input)]:
+            top_row.addWidget(QLabel(lbl_text))
+            top_row.addWidget(le)
 
-        row2 = QHBoxLayout()
         self.year_range_input = QLineEdit(); self.year_range_input.setPlaceholderText("e.g. 2000-2005")
         self.issue_range_input = QLineEdit(); self.issue_range_input.setPlaceholderText("e.g. 10-20")
         self.exclude_range_input = QLineEdit(); self.exclude_range_input.setPlaceholderText("e.g. 15-19")
 
-        row2.addWidget(QLabel("Year Range:")); row2.addWidget(self.year_range_input)
-        row2.addWidget(QLabel("Issue Range:")); row2.addWidget(self.issue_range_input)
-        row2.addWidget(QLabel("Missing Issues (range):")); row2.addWidget(self.exclude_range_input)
+        for lbl_text, le in [("Year Range", self.year_range_input),
+                             ("Issue Range", self.issue_range_input),
+                             ("Missing Issues (range)", self.exclude_range_input)]:
+            bottom_row.addWidget(QLabel(lbl_text))
+            bottom_row.addWidget(le)
 
-        btns = QHBoxLayout()
+        filter_layout.addLayout(top_row)
+        filter_layout.addLayout(bottom_row)
+
+        btn_layout = QHBoxLayout()
         apply_btn = QPushButton("Apply Filters")
         clear_btn = QPushButton("Clear Filters")
         apply_btn.clicked.connect(self.apply_filters)
         clear_btn.clicked.connect(self.clear_filters)
-        btns.addWidget(apply_btn)
-        btns.addWidget(clear_btn)
-        btns.addStretch()
+        btn_layout.addWidget(apply_btn)
+        btn_layout.addWidget(clear_btn)
+        btn_layout.addStretch()
+        filter_layout.addLayout(btn_layout)
 
-        filter_layout.addLayout(row1)
-        filter_layout.addLayout(row2)
-        filter_layout.addLayout(btns)
-        filter_box.setLayout(filter_layout)
-
-        layout.addWidget(filter_box)
-
-        add_btn = QPushButton("➕ Add Mickey Comic")
-        add_btn.clicked.connect(self.add_mickey_comic)
-        layout.addWidget(add_btn)
-
-        del_btn = QPushButton("🗑️ Delete Selected")
-        del_btn.clicked.connect(self.delete_selected)
-        layout.addWidget(del_btn)
+        self.filter_box.setLayout(filter_layout)
+        layout.addWidget(self.filter_box)
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["#", "Issue num", "Vol num", "Main Story", "Year"])
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.verticalHeader().setVisible(False)
-
         self.table.itemChanged.connect(self.on_item_changed)
-        self.table.horizontalHeader().sortIndicatorChanged.connect(self.refresh_positions)
-
         layout.addWidget(self.table)
-        self.setLayout(layout)
+
+        bottom_btn_layout = QHBoxLayout()
+        add_btn = QPushButton("➕ Add Mickey Comic")
+        add_btn.clicked.connect(self.add_mickey_comic)
+        del_btn = QPushButton("🗑️ Delete Selected")
+        del_btn.clicked.connect(self.delete_selected)
+        bottom_btn_layout.addWidget(add_btn)
+        bottom_btn_layout.addWidget(del_btn)
+        layout.addLayout(bottom_btn_layout)
 
         self.refresh_table()
 
     def refresh_positions(self):
-        """Refreces # column"""
         for i in range(self.table.rowCount()):
             index_item = self.table.item(i, 0)
             if not index_item:
@@ -101,10 +97,10 @@ class MickeyTab(QWidget):
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(rows))
         for i, row in enumerate(rows):
-            index_item = QTableWidgetItem()
-            index_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            index_item.setData(Qt.DisplayRole, i + 1)
-            self.table.setItem(i, 0, index_item)
+            idx_item = QTableWidgetItem()
+            idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            idx_item.setData(Qt.DisplayRole, i + 1)
+            self.table.setItem(i, 0, idx_item)
 
             issue_item = QTableWidgetItem()
             issue_item.setData(Qt.DisplayRole, int(row["issue_num"]))
@@ -139,7 +135,7 @@ class MickeyTab(QWidget):
 
     def on_item_changed(self, item):
         if item.column() == 0:
-            return 
+            return
         row = item.row()
         try:
             issue_num = int(self.table.item(row, 1).text())
@@ -174,7 +170,6 @@ class MickeyTab(QWidget):
             except:
                 QMessageBox.warning(self, "Error", "Invalid issue range format (use start-end)")
                 return
-
         if self.exclude_range_input.text():
             try:
                 start, end = map(int, self.exclude_range_input.text().split("-"))
@@ -221,3 +216,18 @@ class MickeyTab(QWidget):
         self.issue_range_input.clear()
         self.exclude_range_input.clear()
         self.refresh_table()
+
+    def get_visible_rows(self):
+        rows = []
+        for i in range(self.table.rowCount()):
+            issue_num = int(self.table.item(i, 1).text())
+            vol_num = int(self.table.item(i, 2).text())
+            mainstory = self.table.item(i, 3).text()
+            year = int(self.table.item(i, 4).text())
+            rows.append({
+                "issue_num": issue_num,
+                "vol_num": vol_num,
+                "mainstory": mainstory,
+                "year": year
+            })
+        return rows

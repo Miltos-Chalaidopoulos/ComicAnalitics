@@ -15,7 +15,8 @@ class DBManager:
     def _create_tables(self):
         cur = self.conn.cursor()
         cur.execute(models.CREATE_MICKEY_TABLE)
-        cur.execute(models.CREATE_OTHER_TABLE)
+        cur.execute(models.CREATE_SUPERHEROES_TABLE)
+        cur.execute(models.CREATE_ARKAS_TABLE)
         self.conn.commit()
 
     def add_mickey(self, issue_num, vol_num, mainstory, year):
@@ -60,11 +61,13 @@ class DBManager:
         existing = {row["issue_num"] for row in cur.fetchall()}
         return [num for num in range(start, end + 1) if num not in existing]
 
-    def add_other(self, title, writer, artist, collection, publisher, issues, main_character, event, story_year, category):
+
+
+    def add_superhero(self, title, writer, artist, collection, publisher, issues, main_character, event, story_year, category):
         cur = self.conn.cursor()
         cur.execute(
             """
-            INSERT INTO other 
+            INSERT INTO superheroes 
             (title, writer, artist, collection, publisher, issues, main_character, event, story_year, category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
@@ -72,15 +75,15 @@ class DBManager:
         )
         self.conn.commit()
 
-    def delete_other(self, id):
+    def delete_superhero(self, id):
         cur = self.conn.cursor()
-        cur.execute("DELETE FROM other WHERE id = ?", (id,))
+        cur.execute("DELETE FROM superheroes WHERE id = ?", (id,))
         self.conn.commit()
 
-    def search_other(self, **filters):
-        query = "SELECT * FROM other"
+    def search_superheroes(self, **kwargs):
+        query = "SELECT * FROM superheroes"
         conditions, values = [], []
-        for key, val in filters.items():
+        for key, val in kwargs.items():
             conditions.append(f"{key} = ?")
             values.append(val)
         if conditions:
@@ -89,8 +92,10 @@ class DBManager:
         cur.execute(query, values)
         return cur.fetchall()
     
-    def advanced_search_other(self, **kwargs):
-        query, values = filters.build_other_filters(**kwargs)
+    def advanced_search_superheroes(self, **kwargs):
+        query, values = filters.build_superheroes_filters(**kwargs)
+        print("QUERY:", query)
+        print("VALUES:", values)
         cur = self.conn.cursor()
         cur.execute(query, values)
         return cur.fetchall()
@@ -104,10 +109,10 @@ class DBManager:
         """, (mainstory, year, issue_num, vol_num))
         self.conn.commit()
 
-    def update_other(self, id, title, writer, artist, collection,publisher, issues, main_character, event, story_year, category):
+    def update_superhero(self, id, title, writer, artist, collection,publisher, issues, main_character, event, story_year, category):
         cur = self.conn.cursor()
         cur.execute("""
-            UPDATE other
+            UPDATE superheroes
             SET title=?, writer=?, artist=?, collection=?, publisher=?,
                 issues=?, main_character=?, event=?, story_year=?, category=? 
             WHERE id = ?
@@ -115,6 +120,38 @@ class DBManager:
             issues, main_character, event, story_year, category, id))
         self.conn.commit()
 
+    def get_superhero_categories(self):
+        cur = self.conn.cursor()
+        cur.execute("SELECT DISTINCT category FROM superheroes")
+        rows = cur.fetchall()
+        return [row["category"] for row in rows]
 
+    def add_arkas(self, story_name, series_name, year):
+        cur = self.conn.cursor()
+        cur.execute( "INSERT INTO arkas (story_name, series_name, year) VALUES (?, ?, ?)", (story_name, series_name, year)) 
+        self.conn.commit()
+    
+    def delete_arkas(self, id):
+        cur = self.conn.cursor()
+        cur.execute("DELETE FROM arkas WHERE id = ?", (id,))
+        self.conn.commit()
+    
+    def search_arkas(self, **kwargs):
+        query = "SELECT * FROM arkas"
+        conditions, values = [], []
+        for key, val in kwargs.items():
+            conditions.append(f"{key} = ?")
+            values.append(val)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        cur = self.conn.cursor()
+        cur.execute(query, values)
+        return cur.fetchall()
+
+    def update_arkas(self, id, story_name, series_name, year):
+        cur = self.conn.cursor()
+        cur.execute("""UPDATE arkas SET story_name=?, series_name=?, year=? WHERE id=? """, (story_name, series_name, year, id))
+        self.conn.commit()
+    
     def close(self):
         self.conn.close()
