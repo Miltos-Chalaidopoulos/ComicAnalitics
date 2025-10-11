@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS mickey (
 );
 """
 
-CREATE_OTHER_TABLE = """
-CREATE TABLE IF NOT EXISTS other (
+CREATE_SUPERHEROES_TABLE = """
+CREATE TABLE IF NOT EXISTS superheroes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT,
     writer TEXT,
@@ -23,5 +23,14 @@ CREATE TABLE IF NOT EXISTS other (
     event BOOLEAN,
     story_year INTEGER,
     category TEXT
+);
+"""
+
+CREATE_ARKAS_TABLE = """
+CREATE TABLE IF NOT EXISTS arkas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    story_name TEXT,
+    series_name TEXT,
+    year INTEGER
 );
 """
