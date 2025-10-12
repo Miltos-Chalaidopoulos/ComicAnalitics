@@ -1,13 +1,17 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QLabel,QPushButton, QTableWidget, QTableWidgetItem, QHeaderView,QGroupBox, QMessageBox)
+from PySide6.QtWidgets import (
+    QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QLabel, QPushButton,
+    QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QMessageBox
+)
 from PySide6.QtCore import Qt
 from ..database.db_manager import DBManager
 from .dialogs import AddArkasDialog
 from ..services import filters
 
 class ArkasTab(QWidget):
-    def __init__(self, db: DBManager):
+    def __init__(self, db: DBManager, main_window=None):
         super().__init__()
         self.db = db
+        self.main_window = main_window
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -26,8 +30,7 @@ class ArkasTab(QWidget):
         btn_layout = QHBoxLayout()
         apply_btn = QPushButton("Apply Filters"); apply_btn.clicked.connect(self.apply_filters)
         clear_btn = QPushButton("Clear Filters"); clear_btn.clicked.connect(self.clear_filters)
-        btn_layout.addWidget(apply_btn)
-        btn_layout.addWidget(clear_btn)
+        btn_layout.addWidget(apply_btn); btn_layout.addWidget(clear_btn)
         filter_layout.addLayout(btn_layout)
 
         self.filter_box.setLayout(filter_layout)
@@ -54,7 +57,7 @@ class ArkasTab(QWidget):
         for i in range(self.table.rowCount()):
             idx_item = QTableWidgetItem()
             idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            idx_item.setData(Qt.DisplayRole, i+1)
+            idx_item.setData(Qt.DisplayRole, i + 1)
             self.table.setItem(i, 0, idx_item)
 
     def refresh_table(self):
@@ -70,17 +73,58 @@ class ArkasTab(QWidget):
             self.table.setItem(i, 3, QTableWidgetItem(str(row["year"])))
         self.table.blockSignals(False)
         self.refresh_positions()
+        self.apply_theme_to_table()
+
+    def apply_theme_to_table(self):
+        if not self.main_window:
+            return
+        dark = self.main_window.dark_mode
+        if dark:
+            style = """
+            QTableWidget {
+                background-color: #1e1e1e;
+                alternate-background-color: #2b2b2b;
+                color: #ffffff;
+                gridline-color: #3a3a3a;
+                selection-background-color: #555555;
+                selection-color: #ffffff;
+            }
+            QHeaderView::section {
+                background-color: #2b2b2b;
+                color: #dddddd;
+                padding: 4px;
+                border: 1px solid #3a3a3a;
+            }
+            """
+        else:
+            style = """
+            QTableWidget {
+                background-color: #ffffff;
+                alternate-background-color: #f5f5f5;
+                color: #000000;
+                gridline-color: #cccccc;
+                selection-background-color: #cce7ff;
+                selection-color: #000000;
+            }
+            QHeaderView::section {
+                background-color: #e6e6e6;
+                color: #000000;
+                padding: 4px;
+                border: 1px solid #cccccc;
+            }
+            """
+        self.table.setStyleSheet(style)
 
     def add_arkas_comic(self):
-        dialog = AddArkasDialog(self.db)
+        dialog = AddArkasDialog(self.db, main_window=self.main_window)
         if dialog.exec():
             self.refresh_table()
 
     def delete_selected(self):
         row = self.table.currentRow()
         if row >= 0:
-            id = row + 1
-            self.db.delete_arkas(id)
+            comic_id = row + 1
+            self.db.delete_arkas(comic_id)
             QMessageBox.information(self, "Deleted", "Arkas comic deleted successfully!")
             self.refresh_table()
 
@@ -92,7 +136,7 @@ class ArkasTab(QWidget):
         if self.year_range_input.text():
             try:
                 start, end = map(int, self.year_range_input.text().split("-"))
-                kwargs["year_range"] = (start,end)
+                kwargs["year_range"] = (start, end)
             except:
                 QMessageBox.warning(self, "Error", "Invalid year range format")
                 return
@@ -111,9 +155,5 @@ class ArkasTab(QWidget):
             story_name = self.table.item(i, 1).text()
             series_name = self.table.item(i, 2).text()
             year = int(self.table.item(i, 3).text())
-            rows.append({
-                "story_name": story_name,
-                "series_name": series_name,
-                "year": year
-            })
+            rows.append({"story_name": story_name, "series_name": series_name, "year": year})
         return rows

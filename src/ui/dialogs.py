@@ -1,12 +1,75 @@
 from PySide6.QtWidgets import (
     QDialog, QFormLayout, QLineEdit, QPushButton, QVBoxLayout, QLabel,
-    QMessageBox, QCheckBox, QPlainTextEdit, QTableWidget, QTableWidgetItem,
-    QScrollArea, QWidget, QTextEdit
+    QMessageBox, QCheckBox, QPlainTextEdit, QTableWidget, QTableWidgetItem
 )
 
-class AddMickeyDialog(QDialog):
-    def __init__(self, db_manager):
+class ThemedDialog(QDialog):
+    def __init__(self, main_window=None):
         super().__init__()
+        self.main_window = main_window
+
+    def showEvent(self, event):
+        if self.main_window and hasattr(self.main_window, "dark_mode"):
+            if self.main_window.dark_mode:
+                # Dark theme
+                self.setStyleSheet("""
+                    QDialog { background-color: #2b2b2b; color: #dddddd; }
+                    QLabel { color: #dddddd; }
+                    QLineEdit, QPlainTextEdit {
+                        background-color: #1e1e1e; color: #ffffff;
+                        border: 1px solid #444; border-radius: 4px; padding: 4px;
+                    }
+                    QPushButton {
+                        background-color: #3c3c3c; color: #ffffff;
+                        border-radius: 5px; padding: 5px 10px;
+                    }
+                    QPushButton:hover { background-color: #555555; }
+                    QCheckBox { color: #dddddd; }
+
+                    QCheckBox::indicator {
+                        width: 16px; height: 16px;
+                        border: 1px solid #bbbbbb;
+                        background-color: #1e1e1e;
+                        border-radius: 3px;
+                    }
+                    QCheckBox::indicator:checked {
+                        background-color: #00bfff;
+                        border: 1px solid #00bfff;
+                    }
+                    QTableWidget { background-color: #2b2b2b; color: #ffffff; gridline-color: #444444; }
+                """)
+            else:
+                # Light theme
+                self.setStyleSheet("""
+                    QDialog { background-color: #f0f0f0; color: #000000; }
+                    QLabel { color: #000000; }
+                    QLineEdit, QPlainTextEdit {
+                        background-color: #ffffff; color: #000000;
+                        border: 1px solid #aaa; border-radius: 4px; padding: 4px;
+                    }
+                    QPushButton {
+                        background-color: #dddddd; color: #000000;
+                        border-radius: 5px; padding: 5px 10px;
+                    }
+                    QPushButton:hover { background-color: #cccccc; }
+                    QCheckBox { color: #000000; }
+                    QCheckBox::indicator {
+                        width: 16px; height: 16px;
+                        border: 1px solid #555;
+                        background-color: #ffffff;
+                        border-radius: 3px;
+                    }
+                    QCheckBox::indicator:checked {
+                        background-color: #0078d7;
+                        border: 1px solid #0078d7;
+                    }
+                    QTableWidget { background-color: #ffffff; color: #000000; gridline-color: #ccc; }
+                """)
+        super().showEvent(event)
+
+class AddMickeyDialog(ThemedDialog):
+    def __init__(self, db_manager, main_window=None):
+        super().__init__(main_window)
         self.db = db_manager
         self.setWindowTitle("Add Mickey Comic")
         self.setMinimumWidth(400)
@@ -42,9 +105,9 @@ class AddMickeyDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to add comic: {e}")
 
 
-class AddSuperheroesDialog(QDialog):
-    def __init__(self, db_manager):
-        super().__init__()
+class AddSuperheroesDialog(ThemedDialog):
+    def __init__(self, db_manager, main_window=None):
+        super().__init__(main_window)
         self.db = db_manager
         self.setWindowTitle("Add Superhero Comic")
         self.setMinimumWidth(400)
@@ -101,10 +164,13 @@ class AddSuperheroesDialog(QDialog):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to add comic: {e}")
 
+    def get_category(self):
+        return self.category_input.text()
 
-class AddArkasDialog(QDialog):
-    def __init__(self, db_manager):
-        super().__init__()
+
+class AddArkasDialog(ThemedDialog):
+    def __init__(self, db_manager, main_window=None):
+        super().__init__(main_window)
         self.db = db_manager
         self.setWindowTitle("Add Arkas Comic")
         self.setMinimumWidth(400)
@@ -137,9 +203,9 @@ class AddArkasDialog(QDialog):
             QMessageBox.critical(self, "Error", f"Failed to add comic: {e}")
 
 
-class SearchDialog(QDialog):
-    def __init__(self, db_manager):
-        super().__init__()
+class SearchDialog(ThemedDialog):
+    def __init__(self, db_manager, main_window=None):
+        super().__init__(main_window)
         self.db = db_manager
         self.setWindowTitle("Database Search")
         self.setMinimumSize(700, 500)

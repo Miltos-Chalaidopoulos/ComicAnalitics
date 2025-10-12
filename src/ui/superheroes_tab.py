@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QTabWidget, QTableWidget, QTableWidgetItem,
-    QHBoxLayout, QPushButton, QLabel, QLineEdit, QGroupBox, QMessageBox
+    QHBoxLayout, QPushButton, QLabel, QLineEdit, QGroupBox, QMessageBox, QHeaderView
 )
 from PySide6.QtCore import Qt
 from ..database.db_manager import DBManager
@@ -8,15 +8,15 @@ from .dialogs import AddSuperheroesDialog
 
 
 class CategoryTable(QWidget):
-    def __init__(self, db: DBManager, category: str, parent_tab):
+    def __init__(self, db: DBManager, category: str, parent_tab, main_window=None):
         super().__init__()
         self.db = db
         self.category = category
         self.parent_tab = parent_tab
+        self.main_window = main_window
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
 
-        # Table
         self.table = QTableWidget()
         self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
@@ -24,6 +24,7 @@ class CategoryTable(QWidget):
             "Issues","Main Character","Event","Story Year"
         ])
         self.table.horizontalHeader().setStretchLastSection(True)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
         self.table.setAlternatingRowColors(True)
         self.table.setSortingEnabled(True)
         self.table.verticalHeader().setVisible(False)
@@ -32,12 +33,45 @@ class CategoryTable(QWidget):
 
         self.refresh_table()
 
-    def refresh_table(self, filters: dict = None):
-        if filters is None:
-            filters = {}
-        filters["category"] = self.category
-        rows = self.db.advanced_search_superheroes(**filters)
-        self.populate_table(rows)
+    def apply_theme_to_table(self):
+        if not self.main_window:
+            return
+        dark = getattr(self.main_window, "dark_mode", False)
+        if dark:
+            style = """
+            QTableWidget {
+                background-color: #1e1e1e;
+                alternate-background-color: #2b2b2b;
+                color: #ffffff;
+                gridline-color: #3a3a3a;
+                selection-background-color: #555555;
+                selection-color: #ffffff;
+            }
+            QHeaderView::section {
+                background-color: #2b2b2b;
+                color: #dddddd;
+                padding: 4px;
+                border: 1px solid #3a3a3a;
+            }
+            """
+        else:
+            style = """
+            QTableWidget {
+                background-color: #ffffff;
+                alternate-background-color: #f5f5f5;
+                color: #000000;
+                gridline-color: #cccccc;
+                selection-background-color: #cce7ff;
+                selection-color: #000000;
+            }
+            QHeaderView::section {
+                background-color: #e6e6e6;
+                color: #000000;
+                padding: 4px;
+                border: 1px solid #cccccc;
+            }
+            """
+        self.table.setStyleSheet(style)
 
     def populate_table(self, rows):
         self.table.blockSignals(True)
@@ -46,23 +80,30 @@ class CategoryTable(QWidget):
         for i, row in enumerate(rows):
             idx_item = QTableWidgetItem()
             idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            idx_item.setData(Qt.DisplayRole, i+1)
+            idx_item.setData(Qt.DisplayRole, i + 1)
             self.table.setItem(i, 0, idx_item)
 
-            self.table.setItem(i, 1, QTableWidgetItem(row["title"]))
-            self.table.setItem(i, 2, QTableWidgetItem(row["writer"]))
-            self.table.setItem(i, 3, QTableWidgetItem(row["artist"]))
-            self.table.setItem(i, 4, QTableWidgetItem(row["collection"]))
-            self.table.setItem(i, 5, QTableWidgetItem(row["publisher"]))
-            self.table.setItem(i, 6, QTableWidgetItem(row["issues"]))
-            self.table.setItem(i, 7, QTableWidgetItem(row["main_character"]))
-            self.table.setItem(i, 8, QTableWidgetItem("Yes" if row["event"] else "No"))
+            for col, key in enumerate(["title","writer","artist","collection","publisher","issues","main_character"]):
+                item = QTableWidgetItem(row[key])
+                self.table.setItem(i, col+1, item)
+
+            event_item = QTableWidgetItem("Yes" if row["event"] else "No")
+            self.table.setItem(i, 8, event_item)
 
             year_item = QTableWidgetItem()
             year_item.setData(Qt.DisplayRole, row["story_year"])
             self.table.setItem(i, 9, year_item)
+
+        self.apply_theme_to_table()
         self.table.setSortingEnabled(True)
         self.table.blockSignals(False)
+
+    def refresh_table(self, filters: dict = None):
+        if filters is None:
+            filters = {}
+        filters["category"] = self.category
+        rows = self.db.advanced_search_superheroes(**filters)
+        self.populate_table(rows)
 
     def on_item_changed(self, item):
         if item.column() == 0:
@@ -80,7 +121,7 @@ class CategoryTable(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to update comic: {e}")
 
     def add_superhero_comic(self):
-        dialog = AddSuperheroesDialog(self.db)
+        dialog = AddSuperheroesDialog(self.db, main_window=self.main_window)
         if dialog.exec():
             self.parent_tab.refresh_categories()
             self.parent_tab.select_category_tab(self.category)
@@ -121,9 +162,10 @@ class CategoryTable(QWidget):
         return rows
 
 class SuperheroesTab(QWidget):
-    def __init__(self, db: DBManager):
+    def __init__(self, db: DBManager, main_window=None):
         super().__init__()
         self.db = db
+        self.main_window = main_window
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -162,12 +204,9 @@ class SuperheroesTab(QWidget):
         filter_layout.addLayout(bottom_row_layout)
 
         btn_layout = QHBoxLayout()
-        apply_btn = QPushButton("Apply Filters")
-        apply_btn.clicked.connect(self.apply_filters)
-        clear_btn = QPushButton("Clear Filters")
-        clear_btn.clicked.connect(self.clear_filters)
-        btn_layout.addWidget(apply_btn)
-        btn_layout.addWidget(clear_btn)
+        apply_btn = QPushButton("Apply Filters"); apply_btn.clicked.connect(self.apply_filters)
+        clear_btn = QPushButton("Clear Filters"); clear_btn.clicked.connect(self.clear_filters)
+        btn_layout.addWidget(apply_btn); btn_layout.addWidget(clear_btn)
         btn_layout.addStretch()
         filter_layout.addLayout(btn_layout)
 
@@ -180,12 +219,9 @@ class SuperheroesTab(QWidget):
         self.refresh_categories()
 
         bottom_btn_layout = QHBoxLayout()
-        add_btn = QPushButton("➕ Add Superhero Comic")
-        add_btn.clicked.connect(self.add_comic_current_tab)
-        del_btn = QPushButton("🗑️ Delete Selected")
-        del_btn.clicked.connect(self.delete_current_tab)
-        bottom_btn_layout.addWidget(add_btn)
-        bottom_btn_layout.addWidget(del_btn)
+        add_btn = QPushButton("➕ Add Superhero Comic"); add_btn.clicked.connect(self.add_comic_current_tab)
+        del_btn = QPushButton("🗑️ Delete Selected"); del_btn.clicked.connect(self.delete_current_tab)
+        bottom_btn_layout.addWidget(add_btn); bottom_btn_layout.addWidget(del_btn)
         layout.addLayout(bottom_btn_layout)
 
     def refresh_categories(self):
@@ -193,7 +229,7 @@ class SuperheroesTab(QWidget):
         self.tabs.clear()
         self.category_tables = {}
         for cat in categories:
-            table_widget = CategoryTable(self.db, category=cat, parent_tab=self)
+            table_widget = CategoryTable(self.db, category=cat, parent_tab=self, main_window=self.main_window)
             self.category_tables[cat] = table_widget
             self.tabs.addTab(table_widget, cat)
 
@@ -208,11 +244,11 @@ class SuperheroesTab(QWidget):
         for key, le in self.filter_inputs.items():
             if le.text():
                 if key == "event":
-                    filters[key] = le.text().lower() in ("yes","true","1")
+                    filters[key] = le.text().lower() in ("yes", "true", "1")
                 elif key == "year_range":
                     try:
-                        start,end = map(int, le.text().split("-"))
-                        filters["year_range"] = (start,end)
+                        start, end = map(int, le.text().split("-"))
+                        filters["year_range"] = (start, end)
                     except:
                         QMessageBox.warning(self,"Error","Invalid year range format (start-end)")
                         return
@@ -236,3 +272,7 @@ class SuperheroesTab(QWidget):
         current_tab = self.tabs.currentWidget()
         if current_tab:
             current_tab.delete_selected()
+
+    def toggle_theme(self):
+        for cat_table in self.category_tables.values():
+            cat_table.apply_theme_to_table()

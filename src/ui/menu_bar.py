@@ -3,6 +3,7 @@ from PySide6.QtGui import QAction, QKeySequence, QDesktopServices
 from PySide6.QtCore import QUrl
 import shutil
 from pathlib import Path
+from ..database.db_manager import DBManager
 
 class MenuBarFactory:
     @staticmethod
@@ -44,12 +45,17 @@ class MenuBarFactory:
             if Path(db_path).exists():
                 Path(db_path).unlink()
 
-            from ..database.db_manager import DBManager
             main_window.db = DBManager(db_path)
 
             for tab in [main_window.mickey_tab, main_window.superheroes_tab, main_window.arkas_tab]:
                 tab.db = main_window.db
-                tab.refresh_table()
+                for tab in [main_window.mickey_tab, main_window.superheroes_tab, main_window.arkas_tab]:
+                    tab.db = main_window.db
+                    if hasattr(tab, "refresh_table"):
+                        tab.refresh_table()
+                    else:
+                        tab.refresh_categories()
+
 
             QMessageBox.information(main_window, "Reset", "Database has been reset!")
         reset_db_action.triggered.connect(reset_db)
@@ -155,6 +161,7 @@ class MenuBarFactory:
                 "• Mickey csv files should start with Issue num,Vol num,Main Story,Year\n"
                 "• Superhero csv files should start with Title,Writer,Artist,Collection,Publisher,Issues,Main Character,Event,Story Year,Category\n"
                 "• Arkas csv files should start with Story Name,Series Name,Year\n"
+                "• First Superhero entry should be imported from csv"
             )
         )
         help_menu.addAction(user_guide_action)

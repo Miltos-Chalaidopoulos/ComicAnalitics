@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QTabWidget, QTableWidget, QTableWidgetItem,
-    QHBoxLayout, QPushButton, QLabel, QLineEdit, QGroupBox,
-    QDialog, QScrollArea, QTextEdit, QMessageBox, QHeaderView
+    QWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QLabel, QPushButton,
+    QTableWidget, QTableWidgetItem, QGroupBox, QMessageBox,
+    QDialog, QScrollArea, QTextEdit, QHeaderView
 )
 from PySide6.QtCore import Qt
 from ..database.db_manager import DBManager
@@ -9,11 +9,15 @@ from .dialogs import AddMickeyDialog
 
 
 class MickeyTab(QWidget):
-    def __init__(self, db: DBManager):
+    def __init__(self, db: DBManager, main_window=None):
         super().__init__()
         self.db = db
+        self.main_window = main_window
+
         layout = QVBoxLayout()
         self.setLayout(layout)
+
+        # --- Filters ---
         self.filter_box = QGroupBox("Filters")
         filter_layout = QVBoxLayout()
         top_row = QHBoxLayout()
@@ -55,6 +59,7 @@ class MickeyTab(QWidget):
         self.filter_box.setLayout(filter_layout)
         layout.addWidget(self.filter_box)
 
+        # --- Table ---
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["#", "Issue num", "Vol num", "Main Story", "Year"])
@@ -66,6 +71,7 @@ class MickeyTab(QWidget):
         self.table.itemChanged.connect(self.on_item_changed)
         layout.addWidget(self.table)
 
+        # --- Bottom Buttons ---
         bottom_btn_layout = QHBoxLayout()
         add_btn = QPushButton("➕ Add Mickey Comic")
         add_btn.clicked.connect(self.add_mickey_comic)
@@ -77,16 +83,13 @@ class MickeyTab(QWidget):
 
         self.refresh_table()
 
+    # ----------------- Core -----------------
     def refresh_positions(self):
         for i in range(self.table.rowCount()):
-            index_item = self.table.item(i, 0)
-            if not index_item:
-                index_item = QTableWidgetItem()
-                index_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-                self.table.setItem(i, 0, index_item)
-            else:
-                index_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            index_item.setData(Qt.DisplayRole, i + 1)
+            idx_item = QTableWidgetItem()
+            idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            idx_item.setData(Qt.DisplayRole, i + 1)
+            self.table.setItem(i, 0, idx_item)
 
     def refresh_table(self):
         rows = self.db.search_mickey()
@@ -96,31 +99,62 @@ class MickeyTab(QWidget):
         self.table.blockSignals(True)
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(rows))
+
         for i, row in enumerate(rows):
-            idx_item = QTableWidgetItem()
-            idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            idx_item.setData(Qt.DisplayRole, i + 1)
-            self.table.setItem(i, 0, idx_item)
-
-            issue_item = QTableWidgetItem()
-            issue_item.setData(Qt.DisplayRole, int(row["issue_num"]))
-            self.table.setItem(i, 1, issue_item)
-
-            vol_item = QTableWidgetItem(str(row["vol_num"]))
-            self.table.setItem(i, 2, vol_item)
-
+            self.table.setItem(i, 1, QTableWidgetItem(str(row["issue_num"])))
+            self.table.setItem(i, 2, QTableWidgetItem(str(row["vol_num"])))
             self.table.setItem(i, 3, QTableWidgetItem(row["mainstory"]))
+            self.table.setItem(i, 4, QTableWidgetItem(str(row["year"])))
 
-            year_item = QTableWidgetItem()
-            year_item.setData(Qt.DisplayRole, int(row["year"]))
-            self.table.setItem(i, 4, year_item)
-
-        self.table.setSortingEnabled(True)
         self.table.blockSignals(False)
         self.refresh_positions()
+        self.apply_theme_to_table()
+        self.table.setSortingEnabled(True)
 
+    # ----------------- Theme -----------------
+    def apply_theme_to_table(self):
+        if not self.main_window:
+            return
+        dark = self.main_window.dark_mode
+        if dark:
+            style = """
+            QTableWidget {
+                background-color: #1e1e1e;
+                alternate-background-color: #2b2b2b;
+                color: #ffffff;
+                gridline-color: #3a3a3a;
+                selection-background-color: #555555;
+                selection-color: #ffffff;
+            }
+            QHeaderView::section {
+                background-color: #2b2b2b;
+                color: #dddddd;
+                padding: 4px;
+                border: 1px solid #3a3a3a;
+            }
+            """
+        else:
+            style = """
+            QTableWidget {
+                background-color: #ffffff;
+                alternate-background-color: #f5f5f5;
+                color: #000000;
+                gridline-color: #cccccc;
+                selection-background-color: #cce7ff;
+                selection-color: #000000;
+            }
+            QHeaderView::section {
+                background-color: #e6e6e6;
+                color: #000000;
+                padding: 4px;
+                border: 1px solid #cccccc;
+            }
+            """
+        self.table.setStyleSheet(style)
+
+    # ----------------- DB Actions -----------------
     def add_mickey_comic(self):
-        dialog = AddMickeyDialog(self.db)
+        dialog = AddMickeyDialog(self.db, main_window=self.main_window)
         if dialog.exec():
             self.refresh_table()
 
@@ -146,6 +180,7 @@ class MickeyTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to update comic: {e}")
 
+    # ----------------- Filters -----------------
     def apply_filters(self):
         kwargs = {}
         if self.issue_input.text():
@@ -195,10 +230,7 @@ class MickeyTab(QWidget):
         scroll_layout = QVBoxLayout()
         text = QTextEdit()
         text.setReadOnly(True)
-        if missing:
-            text.setPlainText(", ".join(map(str, missing)))
-        else:
-            text.setPlainText("No missing issues found.")
+        text.setPlainText(", ".join(map(str, missing)) if missing else "No missing issues found.")
         scroll_layout.addWidget(text)
         content.setLayout(scroll_layout)
         scroll.setWidget(content)
@@ -220,14 +252,10 @@ class MickeyTab(QWidget):
     def get_visible_rows(self):
         rows = []
         for i in range(self.table.rowCount()):
-            issue_num = int(self.table.item(i, 1).text())
-            vol_num = int(self.table.item(i, 2).text())
-            mainstory = self.table.item(i, 3).text()
-            year = int(self.table.item(i, 4).text())
             rows.append({
-                "issue_num": issue_num,
-                "vol_num": vol_num,
-                "mainstory": mainstory,
-                "year": year
+                "issue_num": int(self.table.item(i, 1).text()),
+                "vol_num": int(self.table.item(i, 2).text()),
+                "mainstory": self.table.item(i, 3).text(),
+                "year": int(self.table.item(i, 4).text())
             })
         return rows
