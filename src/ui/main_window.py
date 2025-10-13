@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         self.arkas_tab = ArkasTab(self.db, main_window=self)
 
         self.tabs.addTab(self.mickey_tab, "Mickey Comics")
-        self.tabs.addTab(self.superheroes_tab, "Superheroes Comics")
+        self.tabs.addTab(self.superheroes_tab, "Superhero Comics")
         self.tabs.addTab(self.arkas_tab, "Arkas Comics")
 
         self.setMenuBar(self.create_menu_bar())
