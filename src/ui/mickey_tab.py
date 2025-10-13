@@ -17,7 +17,6 @@ class MickeyTab(QWidget):
         layout = QVBoxLayout()
         self.setLayout(layout)
 
-        # --- Filters ---
         self.filter_box = QGroupBox("Filters")
         filter_layout = QVBoxLayout()
         top_row = QHBoxLayout()
@@ -59,7 +58,6 @@ class MickeyTab(QWidget):
         self.filter_box.setLayout(filter_layout)
         layout.addWidget(self.filter_box)
 
-        # --- Table ---
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(["#", "Issue num", "Vol num", "Main Story", "Year"])
@@ -71,7 +69,6 @@ class MickeyTab(QWidget):
         self.table.itemChanged.connect(self.on_item_changed)
         layout.addWidget(self.table)
 
-        # --- Bottom Buttons ---
         bottom_btn_layout = QHBoxLayout()
         add_btn = QPushButton("➕ Add Mickey Comic")
         add_btn.clicked.connect(self.add_mickey_comic)
@@ -83,7 +80,6 @@ class MickeyTab(QWidget):
 
         self.refresh_table()
 
-    # ----------------- Core -----------------
     def refresh_positions(self):
         for i in range(self.table.rowCount()):
             idx_item = QTableWidgetItem()
@@ -101,17 +97,25 @@ class MickeyTab(QWidget):
         self.table.setRowCount(len(rows))
 
         for i, row in enumerate(rows):
-            self.table.setItem(i, 1, QTableWidgetItem(str(row["issue_num"])))
-            self.table.setItem(i, 2, QTableWidgetItem(str(row["vol_num"])))
+            issue_item = QTableWidgetItem()
+            issue_item.setData(Qt.DisplayRole, int(row["issue_num"]))
+            self.table.setItem(i, 1, issue_item)
+
+            vol_item = QTableWidgetItem()
+            vol_item.setData(Qt.DisplayRole, int(row["vol_num"]))
+            self.table.setItem(i, 2, vol_item)
+
             self.table.setItem(i, 3, QTableWidgetItem(row["mainstory"]))
-            self.table.setItem(i, 4, QTableWidgetItem(str(row["year"])))
+
+            year_item = QTableWidgetItem()
+            year_item.setData(Qt.DisplayRole, int(row["year"]))
+            self.table.setItem(i, 4, year_item)
 
         self.table.blockSignals(False)
         self.refresh_positions()
         self.apply_theme_to_table()
         self.table.setSortingEnabled(True)
 
-    # ----------------- Theme -----------------
     def apply_theme_to_table(self):
         if not self.main_window:
             return
@@ -152,7 +156,6 @@ class MickeyTab(QWidget):
             """
         self.table.setStyleSheet(style)
 
-    # ----------------- DB Actions -----------------
     def add_mickey_comic(self):
         dialog = AddMickeyDialog(self.db, main_window=self.main_window)
         if dialog.exec():
@@ -180,7 +183,6 @@ class MickeyTab(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to update comic: {e}")
 
-    # ----------------- Filters -----------------
     def apply_filters(self):
         kwargs = {}
         if self.issue_input.text():
