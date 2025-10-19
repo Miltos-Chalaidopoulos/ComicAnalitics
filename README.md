@@ -59,6 +59,9 @@ python -m src.main
 ## Build executable instructions
 ```bash
 cd src
-pyinstaller --onefile --noconfirm --distpath ../dist --workpath ../build main.py
+#for linux
+pyinstaller --onefile --noconfirm --distpath ../dist --workpath ../build --name ComicAnalytics main.py
+# for Windows
+pyinstaller --onefile --noconfirm --windowed --name ComicAnalytics --distpath dist --workpath build --paths src src\main.py
 ```
 executable file is located in /dist
