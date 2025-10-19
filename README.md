@@ -64,4 +64,4 @@ pyinstaller --onefile --noconfirm --distpath ../dist --workpath ../build --name 
 # for Windows
 pyinstaller --onefile --noconfirm --windowed --name ComicAnalytics --distpath dist --workpath build --paths src src\main.py
 ```
-executable file is located in /dist
+executable file is located in /dist with name ComicAnalytics
