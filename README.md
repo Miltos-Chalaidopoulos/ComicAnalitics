@@ -40,13 +40,13 @@ cd ComicAnalytics
 ### Create virtual Enviroment
 ```bash
 python3 -m venv .venv
-
+```
+```bash
 source .venv/bin/activate # for linux
 
-# or 
-
+# or for Windows
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.venv\Scripts\activate  # for Windows
+.venv\Scripts\activate
 ```
 ### Install dependancies
 ``` bash
@@ -56,3 +56,9 @@ pip install -r requirements.txt
 ``` bash
 python -m src.main
 ```
+## Build executable instructions
+```bash
+cd src
+pyinstaller --onefile --noconfirm --distpath ../dist --workpath ../build main.py
+```
+executable file is located in /dist

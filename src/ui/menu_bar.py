@@ -3,7 +3,7 @@ from PySide6.QtGui import QAction, QKeySequence, QDesktopServices
 from PySide6.QtCore import QUrl
 import shutil
 from pathlib import Path
-from ..database.db_manager import DBManager
+from database.db_manager import DBManager
 
 class MenuBarFactory:
     @staticmethod

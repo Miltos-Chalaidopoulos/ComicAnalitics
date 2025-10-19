@@ -7,12 +7,12 @@ from PySide6.QtCore import Qt, QUrl
 import shutil
 from pathlib import Path
 
-from .mickey_tab import MickeyTab
-from .superheroes_tab import SuperheroesTab
-from .arkas_tab import ArkasTab
-from ..database.db_manager import DBManager
-from ..services.csv_edit import CSVService
-from .dialogs import SearchDialog
+from ui.mickey_tab import MickeyTab
+from ui.superheroes_tab import SuperheroesTab
+from ui.arkas_tab import ArkasTab
+from database.db_manager import DBManager
+from services.csv_edit import CSVService
+from ui.dialogs import SearchDialog
 
 
 class MainWindow(QMainWindow):

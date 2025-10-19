@@ -1,5 +1,5 @@
 import csv
-from ..database.db_manager import DBManager
+from database.db_manager import DBManager
 
 
 class CSVService:

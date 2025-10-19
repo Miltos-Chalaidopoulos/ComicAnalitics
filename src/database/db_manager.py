@@ -1,9 +1,14 @@
 import sqlite3
+import sys
 from pathlib import Path
 from . import models
-from ..services import filters
+from services import filters
 
-DB_FILE = Path(__file__).parent / "data.db"
+if getattr(sys, 'frozen', False):
+    BASE_DIR = Path(sys.executable).parent
+else:
+    BASE_DIR = Path(__file__).parent
+DB_FILE = BASE_DIR / "data.db"
 
 class DBManager:
     def __init__(self, db_path=DB_FILE):
