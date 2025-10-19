@@ -20,8 +20,8 @@ class CategoryTable(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(10)
         self.table.setHorizontalHeaderLabels([
-            "#","Title","Writer","Artist","Collection","Publisher",
-            "Issues","Main Character","Event","Story Year"
+            "#", "Title", "Writer", "Artist", "Collection", "Publisher",
+            "Issues", "Main Character", "Event", "Story Year"
         ])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
@@ -77,26 +77,31 @@ class CategoryTable(QWidget):
         self.table.blockSignals(True)
         self.table.setSortingEnabled(False)
         self.table.setRowCount(len(rows))
+
         for i, row in enumerate(rows):
             idx_item = QTableWidgetItem()
             idx_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             idx_item.setData(Qt.DisplayRole, i + 1)
             self.table.setItem(i, 0, idx_item)
 
-            for col, key in enumerate(["title","writer","artist","collection","publisher","issues","main_character"]):
-                item = QTableWidgetItem(row[key])
-                self.table.setItem(i, col+1, item)
+            columns = ["title", "writer", "artist", "collection", "publisher", "issues", "main_character"]
+            for col, key in enumerate(columns, start=1):
+                item = QTableWidgetItem(row[key] if row[key] is not None else "")
+                # Βάζουμε το id στο πρώτο editable κελί (title)
+                if col == 1:
+                    item.setData(Qt.UserRole, row["id"])
+                self.table.setItem(i, col, item)
 
             event_item = QTableWidgetItem("Yes" if row["event"] else "No")
             self.table.setItem(i, 8, event_item)
 
             year_item = QTableWidgetItem()
-            year_item.setData(Qt.DisplayRole, row["story_year"])
+            year_item.setData(Qt.DisplayRole, row["story_year"] if row["story_year"] else 0)
             self.table.setItem(i, 9, year_item)
 
+        self.table.blockSignals(False)
         self.apply_theme_to_table()
         self.table.setSortingEnabled(True)
-        self.table.blockSignals(False)
 
     def refresh_table(self, filters: dict = None):
         if filters is None:
@@ -109,16 +114,32 @@ class CategoryTable(QWidget):
         if item.column() == 0:
             return
         row = item.row()
+
         try:
-            comic_id = self.table.item(row, 1).data(Qt.UserRole) or int(row)
-            values = [self.table.item(row, col).text() for col in range(1, 10)]
-            title, writer, artist, collection, publisher, issues, main_char, event, story_year = values
-            event_bool = event.lower() in ("yes", "true", "1")
-            story_year = int(story_year)
-            self.db.update_superhero(comic_id, title, writer, artist, collection, publisher,
-                                     issues, main_char, event_bool, story_year, self.category)
+            comic_id = self.table.item(row, 1).data(Qt.UserRole)
+            if not comic_id:
+                return
+
+            title = self.table.item(row, 1).text()
+            writer = self.table.item(row, 2).text()
+            artist = self.table.item(row, 3).text()
+            collection = self.table.item(row, 4).text()
+            publisher = self.table.item(row, 5).text()
+            issues = self.table.item(row, 6).text()
+            main_character = self.table.item(row, 7).text()
+            event_text = self.table.item(row, 8).text().lower()
+            story_year_text = self.table.item(row, 9).text()
+
+            event_bool = event_text in ("yes", "true", "1")
+            story_year = int(story_year_text) if story_year_text.isdigit() else None
+            self.db.update_superhero(
+                comic_id, title, writer, artist, collection, publisher,
+                issues, main_character, event_bool, story_year, self.category
+            )
+
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to update comic: {e}")
+            print("Update error:", e)
 
     def add_superhero_comic(self):
         dialog = AddSuperheroesDialog(self.db, main_window=self.main_window)
@@ -129,7 +150,9 @@ class CategoryTable(QWidget):
     def delete_selected(self):
         row = self.table.currentRow()
         if row >= 0:
-            comic_id = self.table.item(row, 1).data(Qt.UserRole) or int(row)
+            comic_id = self.table.item(row, 1).data(Qt.UserRole)
+            if not comic_id:
+                return
             self.db.delete_superhero(comic_id)
             QMessageBox.information(self, "Deleted", "Comic deleted successfully!")
             self.refresh_table()
@@ -146,7 +169,6 @@ class CategoryTable(QWidget):
             main_character = self.table.item(i, 7).text()
             event = self.table.item(i, 8).text().lower() in ("yes", "true", "1")
             story_year = int(self.table.item(i, 9).text())
-
             rows.append({
                 "title": title,
                 "writer": writer,
@@ -182,7 +204,7 @@ class SuperheroesTab(QWidget):
         for lbl_text in top_labels:
             lbl = QLabel(lbl_text)
             le = QLineEdit()
-            le.setPlaceholderText(f" {lbl_text}")
+            le.setPlaceholderText(f"{lbl_text}")
             top_row_layout.addWidget(lbl)
             top_row_layout.addWidget(le)
             self.filter_inputs[lbl_text.lower().replace(" ", "_")] = le
@@ -250,7 +272,7 @@ class SuperheroesTab(QWidget):
                         start, end = map(int, le.text().split("-"))
                         filters["year_range"] = (start, end)
                     except:
-                        QMessageBox.warning(self,"Error","Invalid year range format (start-end)")
+                        QMessageBox.warning(self, "Error", "Invalid year range format (start-end)")
                         return
                 else:
                     filters[key] = le.text()
