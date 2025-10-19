@@ -4,8 +4,8 @@ from PySide6.QtWidgets import (
     QDialog, QScrollArea, QTextEdit, QHeaderView
 )
 from PySide6.QtCore import Qt
-from ..database.db_manager import DBManager
-from .dialogs import AddMickeyDialog
+from database.db_manager import DBManager
+from ui.dialogs import AddMickeyDialog
 
 
 class MickeyTab(QWidget):

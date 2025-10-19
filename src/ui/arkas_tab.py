@@ -3,9 +3,9 @@ from PySide6.QtWidgets import (
     QTableWidget, QTableWidgetItem, QHeaderView, QGroupBox, QMessageBox
 )
 from PySide6.QtCore import Qt
-from ..database.db_manager import DBManager
-from .dialogs import AddArkasDialog
-from ..services import filters
+from database.db_manager import DBManager
+from ui.dialogs import AddArkasDialog
+from services import filters
 
 
 class ArkasTab(QWidget):

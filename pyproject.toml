@@ -5,4 +5,9 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "comic-analytics"
 version = "0.1.0"
-packages = ["database"]
+description = "Comic analytics desktop app"
+requires-python = ">=3.8"
+dependencies = ["PySide6"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

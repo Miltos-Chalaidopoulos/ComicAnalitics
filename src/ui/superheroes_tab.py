@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QPushButton, QLabel, QLineEdit, QGroupBox, QMessageBox, QHeaderView
 )
 from PySide6.QtCore import Qt
-from ..database.db_manager import DBManager
-from .dialogs import AddSuperheroesDialog
+from database.db_manager import DBManager
+from ui.dialogs import AddSuperheroesDialog
 
 
 class CategoryTable(QWidget):
