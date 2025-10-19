@@ -1,4 +1,13 @@
 import sys
+from pathlib import Path
+
+if getattr(sys, 'frozen', False):
+    base_path = Path(sys._MEIPASS)
+else:
+    base_path = Path(__file__).parent
+
+sys.path.append(str(base_path))
+
 from PySide6.QtWidgets import QApplication
 from ui.main_window import MainWindow
 
